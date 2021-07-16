@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>ProjectMarmot</title>
+    <title>ClinicalGuidance</title>
     <link rel="shortcut icon" href="TemplateData/favicon.ico">
     <link rel="stylesheet" href="TemplateData/style.css">
   </head>
@@ -22,20 +22,20 @@
       <div id="unity-footer">
         <div id="unity-webgl-logo"></div>
         <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">ProjectMarmot</div>
+        <div id="unity-build-title">ClinicalGuidance</div>
       </div>
     </div>
     <script>
       var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/ProjectMarmot.loader.js";
+      var loaderUrl = buildUrl + "/ClinicalGuidance.loader.js";
       var config = {
-        dataUrl: buildUrl + "/ProjectMarmot.data",
-        frameworkUrl: buildUrl + "/ProjectMarmot.framework.js",
-        codeUrl: buildUrl + "/ProjectMarmot.wasm",
+        dataUrl: buildUrl + "/ClinicalGuidance.data",
+        frameworkUrl: buildUrl + "/ClinicalGuidance.framework.js",
+        codeUrl: buildUrl + "/ClinicalGuidance.wasm",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "ACTRI Game Factory",
-        productName: "ProjectMarmot",
-        productVersion: "0.9.95",
+        productName: "ClinicalGuidance",
+        productVersion: "0.9.96",
       };
 
       var container = document.querySelector("#unity-container");
@@ -58,8 +58,8 @@
       }
       loadingBar.style.display = "block";
 
-      var script = document.createElement("script");
       var unityInstance;
+      var script = document.createElement("script");
       script.src = loaderUrl;
       script.onload = () => {
         createUnityInstance(canvas, config, (progress) => {

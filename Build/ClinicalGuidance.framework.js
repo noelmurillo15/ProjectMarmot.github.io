@@ -1166,29 +1166,29 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 2595688: function() {
+ 2358328: function() {
   Module["emscripten_get_now_backup"] = performance.now;
  },
- 2595743: function($0) {
+ 2358383: function($0) {
   performance.now = function() {
    return $0;
   };
  },
- 2595791: function($0) {
+ 2358431: function($0) {
   performance.now = function() {
    return $0;
   };
  },
- 2595839: function() {
+ 2358479: function() {
   performance.now = Module["emscripten_get_now_backup"];
  },
- 2595894: function() {
+ 2358534: function() {
   return Module.webglContextAttributes.premultipliedAlpha;
  },
- 2595955: function() {
+ 2358595: function() {
   return Module.webglContextAttributes.preserveDrawingBuffer;
  },
- 2596019: function() {
+ 2358659: function() {
   return Module.webglContextAttributes.powerPreference;
  }
 };
@@ -2701,18 +2701,6 @@ function _JS_Sound_Stop(channelInstance, delay) {
  channel.stop(delay);
 }
 
-function _JS_SystemInfo_GetBrowserName(buffer, bufferSize) {
- var browser = Module.SystemInfo.browser;
- if (buffer) stringToUTF8(browser, buffer, bufferSize);
- return lengthBytesUTF8(browser);
-}
-
-function _JS_SystemInfo_GetBrowserVersionString(buffer, bufferSize) {
- var browserVer = Module.SystemInfo.browserVersion;
- if (buffer) stringToUTF8(browserVer, buffer, bufferSize);
- return lengthBytesUTF8(browserVer);
-}
-
 function _JS_SystemInfo_GetCanvasClientSize(domElementSelector, outWidth, outHeight) {
  var selector = UTF8ToString(domElementSelector);
  var canvas = selector == "#canvas" ? Module["canvas"] : document.querySelector(selector);
@@ -2735,12 +2723,6 @@ function _JS_SystemInfo_GetGPUInfo(buffer, bufferSize) {
  var gpuinfo = Module.SystemInfo.gpu;
  if (buffer) stringToUTF8(gpuinfo, buffer, bufferSize);
  return lengthBytesUTF8(gpuinfo);
-}
-
-function _JS_SystemInfo_GetLanguage(buffer, bufferSize) {
- var language = Module.SystemInfo.language;
- if (buffer) stringToUTF8(language, buffer, bufferSize);
- return lengthBytesUTF8(language);
 }
 
 function _JS_SystemInfo_GetMatchWebGLToCanvasSize() {
@@ -2797,371 +2779,6 @@ function _JS_SystemInfo_IsMobile() {
 
 function _JS_UnityEngineShouldQuit() {
  return !!Module.shouldQuit;
-}
-
-var videoInstances = {};
-
-var jsSupportedVideoFormats = [];
-
-var jsUnsupportedVideoFormats = [];
-
-function _JS_Video_CanPlayFormat(format) {
- format = UTF8ToString(format);
- if (jsSupportedVideoFormats.indexOf(format) != -1) return true;
- if (jsUnsupportedVideoFormats.indexOf(format) != -1) return false;
- var video = document.createElement("video");
- var canPlay = video.canPlayType(format);
- if (canPlay) jsSupportedVideoFormats.push(format); else jsUnsupportedVideoFormats.push(format);
- return !!canPlay;
-}
-
-var videoInstanceIdCounter = 0;
-
-function jsVideoEnded() {
- if (this.onendedCallback) {
-  dynCall_vi(this.onendedCallback, this.onendedRef);
- }
-}
-
-var hasSRGBATextures = null;
-
-function _JS_Video_Create(url) {
- var str = UTF8ToString(url);
- var video = document.createElement("video");
- video.style.display = "none";
- video.src = str;
- video.muted = true;
- video.setAttribute("muted", "");
- video.setAttribute("playsinline", "");
- video.crossOrigin = "anonymous";
- videoInstances[++videoInstanceIdCounter] = video;
- if (hasSRGBATextures == null) hasSRGBATextures = Module.SystemInfo.browser == "Chrome" || Module.SystemInfo.browser == "Edge";
- return videoInstanceIdCounter;
-}
-
-var jsVideoPendingBlockedVideos = {};
-
-function jsVideoPlayPendingBlockedVideo(video) {
- jsVideoPendingBlockedVideos[video].play().then(function() {
-  jsVideoRemovePendingBlockedVideo(video);
- });
-}
-
-function jsVideoAttemptToPlayBlockedVideos() {
- for (var i in jsVideoPendingBlockedVideos) {
-  if (jsVideoPendingBlockedVideos.hasOwnProperty(i)) jsVideoPlayPendingBlockedVideo(i);
- }
-}
-
-function jsVideoRemovePendingBlockedVideo(video) {
- delete jsVideoPendingBlockedVideos[video];
- if (Object.keys(jsVideoPendingBlockedVideos).length == 0) {
-  window.removeEventListener("mousedown", jsVideoAttemptToPlayBlockedVideos);
- }
-}
-
-function _JS_Video_Destroy(video) {
- var v = videoInstances[video];
- if (v.loopEndPollInterval) {
-  clearInterval(v.loopEndPollInterval);
- }
- jsVideoRemovePendingBlockedVideo(video);
- v.src = "";
- delete v.onendedCallback;
- v.onended = v.onerror = v.oncanplay = v.onseeked = null;
- delete videoInstances[video];
-}
-
-function _JS_Video_Duration(video) {
- return videoInstances[video].duration;
-}
-
-function _JS_Video_EnableAudioTrack(video, trackIndex, enabled) {
- var v = videoInstances[video];
- if (!v.enabledTracks) v.enabledTracks = [];
- while (v.enabledTracks.length <= trackIndex) v.enabledTracks.push(true);
- v.enabledTracks[trackIndex] = enabled;
- var tracks = v.audioTracks;
- if (!tracks) return;
- var track = tracks[trackIndex];
- if (track) track.enabled = enabled ? true : false;
-}
-
-function _JS_Video_GetAudioLanguageCode(video, trackIndex) {
- var tracks = videoInstances[video].audioTracks;
- if (!tracks) return "";
- var track = tracks[trackIndex];
- return track ? track.language : "";
-}
-
-function _JS_Video_GetNumAudioTracks(video) {
- var tracks = videoInstances[video].audioTracks;
- return tracks ? tracks.length : 1;
-}
-
-function _JS_Video_Height(video) {
- return videoInstances[video].videoHeight;
-}
-
-function _JS_Video_IsPlaying(video) {
- var v = videoInstances[video];
- return !v.paused && !v.ended;
-}
-
-function _JS_Video_IsReady(video) {
- var v = videoInstances[video];
- var targetReadyState = /(iPhone|iPad)/i.test(navigator.userAgent) ? v.HAVE_METADATA : v.HAVE_ENOUGH_DATA;
- if (!v.isReady && v.readyState >= targetReadyState) v.isReady = true;
- return v.isReady;
-}
-
-function _JS_Video_Pause(video) {
- var v = videoInstances[video];
- v.pause();
- jsVideoRemovePendingBlockedVideo(video);
- if (v.loopEndPollInterval) {
-  clearInterval(v.loopEndPollInterval);
- }
-}
-
-function _JS_Video_SetLoop(video, loop) {
- var v = videoInstances[video];
- if (v.loopEndPollInterval) {
-  clearInterval(v.loopEndPollInterval);
- }
- v.loop = loop;
- if (loop) {
-  v.loopEndPollInterval = setInterval(function() {
-   if (v.currentTime < v.lastSeenPlaybackTime) {
-    jsVideoEnded.apply(v);
-   }
-   v.lastSeenPlaybackTime = v.currentTime;
-  }, 1e3 / 30);
-  v.lastSeenPlaybackTime = v.currentTime;
-  v.onended = null;
- } else {
-  v.onended = jsVideoEnded;
- }
-}
-
-function jsVideoAllAudioTracksAreDisabled(v) {
- if (!v.enabledTracks) return false;
- for (var i = 0; i < v.enabledTracks.length; ++i) {
-  if (v.enabledTracks[i]) return false;
- }
- return true;
-}
-
-function jsVideoAddPendingBlockedVideo(video, v) {
- if (Object.keys(jsVideoPendingBlockedVideos).length == 0) window.addEventListener("mousedown", jsVideoAttemptToPlayBlockedVideos);
- jsVideoPendingBlockedVideos[video] = v;
-}
-
-function _JS_Video_Play(video, muted) {
- var v = videoInstances[video];
- v.muted = muted || jsVideoAllAudioTracksAreDisabled(v);
- var promise = v.play();
- if (promise) promise.catch(function(e) {
-  if (e.name == "NotAllowedError") jsVideoAddPendingBlockedVideo(video, v);
- });
- _JS_Video_SetLoop(video, v.loop);
-}
-
-function _JS_Video_Seek(video, time) {
- var v = videoInstances[video];
- v.lastSeenPlaybackTime = v.currentTime = time;
-}
-
-function _JS_Video_SetEndedHandler(video, ref, onended) {
- var v = videoInstances[video];
- v.onendedCallback = onended;
- v.onendedRef = ref;
-}
-
-function _JS_Video_SetErrorHandler(video, ref, onerror) {
- videoInstances[video].onerror = function(evt) {
-  dynCall_vii(onerror, ref, evt.target.error.code);
- };
-}
-
-function _JS_Video_SetMute(video, muted) {
- var v = videoInstances[video];
- v.muted = muted || jsVideoAllAudioTracksAreDisabled(v);
-}
-
-function _JS_Video_SetPlaybackRate(video, rate) {
- videoInstances[video].playbackRate = rate;
-}
-
-function _JS_Video_SetReadyHandler(video, ref, onready) {
- videoInstances[video].oncanplay = function() {
-  dynCall_vi(onready, ref);
- };
-}
-
-function _JS_Video_SetSeekedOnceHandler(video, ref, onseeked) {
- videoInstances[video].onseeked = function() {
-  var v = videoInstances[video];
-  v.lastUpdateTextureTime = null;
-  dynCall_vi(onseeked, ref);
- };
-}
-
-function _JS_Video_SetVolume(video, volume) {
- videoInstances[video].volume = volume;
-}
-
-function _JS_Video_Time(video) {
- return videoInstances[video].currentTime;
-}
-
-function _JS_Video_UpdateToTexture(video, tex, adjustToLinearspace) {
- var v = videoInstances[video];
- if (!(v.videoWidth > 0 && v.videoHeight > 0)) return false;
- if (v.lastUpdateTextureTime === v.currentTime) return false;
- v.lastUpdateTextureTime = v.currentTime;
- GLctx.pixelStorei(GLctx.UNPACK_FLIP_Y_WEBGL, true);
- var internalFormat = adjustToLinearspace ? hasSRGBATextures ? GLctx.SRGB8_ALPHA8 : GLctx.SRGB8 : GLctx.RGBA;
- var format = adjustToLinearspace ? hasSRGBATextures ? GLctx.RGBA : GLctx.RGB : GLctx.RGBA;
- if (v.previousUploadedWidth != v.videoWidth || v.previousUploadedHeight != v.videoHeight) {
-  GLctx.deleteTexture(GL.textures[tex]);
-  var t = GLctx.createTexture();
-  t.name = tex;
-  GL.textures[tex] = t;
-  GLctx.bindTexture(GLctx.TEXTURE_2D, t);
-  GLctx.texParameteri(GLctx.TEXTURE_2D, GLctx.TEXTURE_WRAP_S, GLctx.CLAMP_TO_EDGE);
-  GLctx.texParameteri(GLctx.TEXTURE_2D, GLctx.TEXTURE_WRAP_T, GLctx.CLAMP_TO_EDGE);
-  GLctx.texParameteri(GLctx.TEXTURE_2D, GLctx.TEXTURE_MIN_FILTER, GLctx.LINEAR);
-  GLctx.texImage2D(GLctx.TEXTURE_2D, 0, internalFormat, format, GLctx.UNSIGNED_BYTE, v);
-  v.previousUploadedWidth = v.videoWidth;
-  v.previousUploadedHeight = v.videoHeight;
- } else {
-  GLctx.bindTexture(GLctx.TEXTURE_2D, GL.textures[tex]);
-  GLctx.texImage2D(GLctx.TEXTURE_2D, 0, internalFormat, format, GLctx.UNSIGNED_BYTE, v);
- }
- GLctx.pixelStorei(GLctx.UNPACK_FLIP_Y_WEBGL, false);
- return true;
-}
-
-function _JS_Video_Width(video) {
- return videoInstances[video].videoWidth;
-}
-
-var activeWebCams = {};
-
-function _JS_WebCamVideo_CanPlay(deviceId) {
- var webcam = activeWebCams[deviceId];
- return webcam && webcam.video.videoWidth > 0 && webcam.video.videoHeight > 0;
-}
-
-function _JS_WebCamVideo_GetDeviceName(deviceId, buffer, bufferSize) {
- var webcam = videoInputDevices[deviceId];
- var name = webcam ? webcam.name : "(disconnected input #" + (deviceId + 1) + ")";
- if (buffer) stringToUTF8(name, buffer, bufferSize);
- return lengthBytesUTF8(name);
-}
-
-function _JS_WebCamVideo_GetNativeHeight(deviceId) {
- return activeWebCams[deviceId] && activeWebCams[deviceId].video.videoHeight;
-}
-
-function _JS_WebCamVideo_GetNativeWidth(deviceId) {
- return activeWebCams[deviceId] && activeWebCams[deviceId].video.videoWidth;
-}
-
-function _JS_WebCamVideo_GetNumDevices() {
- var numDevices = 0;
- if (!videoInputDevicesEnumerated) {
-  console.warn("WebCam devices were used before being enumerated by the browser. The browser is likely " + "pausing WebCam device enumeration due to the page being out of focus while the Unity " + "application is being loaded in the background.\n" + "If you are a developer, you can ensure WebCam devices are enumerated by first requiring " + "user interaction.\n" + "See https://github.com/w3c/mediacapture-main/issues/905 for details.");
-  return numDevices;
- }
- Object.keys(videoInputDevices).forEach(function(i) {
-  numDevices = Math.max(numDevices, videoInputDevices[i].id + 1);
- });
- return numDevices;
-}
-
-function _JS_WebCamVideo_GrabFrame(deviceId, buffer, destWidth, destHeight) {
- var webcam = activeWebCams[deviceId];
- if (!webcam) return;
- var timeNow = performance.now();
- if (timeNow < webcam.nextFrameAvailableTime) {
-  return;
- }
- webcam.nextFrameAvailableTime += webcam.frameLengthInMsecs;
- if (webcam.nextFrameAvailableTime < timeNow) {
-  webcam.nextFrameAvailableTime = timeNow + webcam.frameLengthInMsecs;
- }
- var canvas = webcam.canvas;
- if (canvas.width != destWidth || canvas.height != destHeight || !webcam.context2d) {
-  canvas.width = destWidth;
-  canvas.height = destHeight;
-  webcam.context2d = canvas.getContext("2d");
- }
- var context = webcam.context2d;
- context.drawImage(webcam.video, 0, 0, webcam.video.videoWidth, webcam.video.videoHeight, 0, 0, destWidth, destHeight);
- HEAPU8.set(context.getImageData(0, 0, destWidth, destHeight).data, buffer);
- return 1;
-}
-
-function _JS_WebCamVideo_IsFrontFacing(deviceId) {
- return videoInputDevices[deviceId].isFrontFacing;
-}
-
-function _JS_WebCamVideo_Start(deviceId) {
- if (activeWebCams[deviceId]) {
-  ++activeWebCams[deviceId].refCount;
-  return;
- }
- if (!videoInputDevices[deviceId]) {
-  console.error("Cannot start video input with ID " + deviceId + ". No such ID exists! Existing video inputs are:");
-  console.dir(videoInputDevices);
-  return;
- }
- navigator.mediaDevices.getUserMedia({
-  audio: false,
-  video: videoInputDevices[deviceId].deviceId ? {
-   deviceId: {
-    exact: videoInputDevices[deviceId].deviceId
-   }
-  } : true
- }).then(function(stream) {
-  var video = document.createElement("video");
-  video.srcObject = stream;
-  if (/(iPhone|iPad|iPod)/.test(navigator.userAgent)) {
-   warnOnce("Applying iOS Safari specific workaround to video playback: https://bugs.webkit.org/show_bug.cgi?id=217578");
-   video.setAttribute("playsinline", "");
-  }
-  video.play();
-  var canvas = document.createElement("canvas");
-  activeWebCams[deviceId] = {
-   video: video,
-   canvas: document.createElement("canvas"),
-   stream: stream,
-   frameLengthInMsecs: 1e3 / stream.getVideoTracks()[0].getSettings().frameRate,
-   nextFrameAvailableTime: 0,
-   refCount: 1
-  };
- }).catch(function(e) {
-  console.error("Unable to start video input! " + e);
- });
-}
-
-function _JS_WebCamVideo_Stop(deviceId) {
- var webcam = activeWebCams[deviceId];
- if (!webcam) return;
- if (--webcam.refCount <= 0) {
-  webcam.video.pause();
-  webcam.video.srcObject = null;
-  webcam.stream.getVideoTracks().forEach(function(track) {
-   track.stop();
-  });
-  delete activeWebCams[deviceId];
- }
-}
-
-function _JS_WebCam_IsSupported() {
- return !!navigator.mediaDevices;
 }
 
 var wr = {
@@ -13908,12 +13525,9 @@ var asmLibraryArg = {
  "JS_Sound_SetPosition": _JS_Sound_SetPosition,
  "JS_Sound_SetVolume": _JS_Sound_SetVolume,
  "JS_Sound_Stop": _JS_Sound_Stop,
- "JS_SystemInfo_GetBrowserName": _JS_SystemInfo_GetBrowserName,
- "JS_SystemInfo_GetBrowserVersionString": _JS_SystemInfo_GetBrowserVersionString,
  "JS_SystemInfo_GetCanvasClientSize": _JS_SystemInfo_GetCanvasClientSize,
  "JS_SystemInfo_GetDocumentURL": _JS_SystemInfo_GetDocumentURL,
  "JS_SystemInfo_GetGPUInfo": _JS_SystemInfo_GetGPUInfo,
- "JS_SystemInfo_GetLanguage": _JS_SystemInfo_GetLanguage,
  "JS_SystemInfo_GetMatchWebGLToCanvasSize": _JS_SystemInfo_GetMatchWebGLToCanvasSize,
  "JS_SystemInfo_GetMemory": _JS_SystemInfo_GetMemory,
  "JS_SystemInfo_GetOS": _JS_SystemInfo_GetOS,
@@ -13926,40 +13540,6 @@ var asmLibraryArg = {
  "JS_SystemInfo_HasWebGL": _JS_SystemInfo_HasWebGL,
  "JS_SystemInfo_IsMobile": _JS_SystemInfo_IsMobile,
  "JS_UnityEngineShouldQuit": _JS_UnityEngineShouldQuit,
- "JS_Video_CanPlayFormat": _JS_Video_CanPlayFormat,
- "JS_Video_Create": _JS_Video_Create,
- "JS_Video_Destroy": _JS_Video_Destroy,
- "JS_Video_Duration": _JS_Video_Duration,
- "JS_Video_EnableAudioTrack": _JS_Video_EnableAudioTrack,
- "JS_Video_GetAudioLanguageCode": _JS_Video_GetAudioLanguageCode,
- "JS_Video_GetNumAudioTracks": _JS_Video_GetNumAudioTracks,
- "JS_Video_Height": _JS_Video_Height,
- "JS_Video_IsPlaying": _JS_Video_IsPlaying,
- "JS_Video_IsReady": _JS_Video_IsReady,
- "JS_Video_Pause": _JS_Video_Pause,
- "JS_Video_Play": _JS_Video_Play,
- "JS_Video_Seek": _JS_Video_Seek,
- "JS_Video_SetEndedHandler": _JS_Video_SetEndedHandler,
- "JS_Video_SetErrorHandler": _JS_Video_SetErrorHandler,
- "JS_Video_SetLoop": _JS_Video_SetLoop,
- "JS_Video_SetMute": _JS_Video_SetMute,
- "JS_Video_SetPlaybackRate": _JS_Video_SetPlaybackRate,
- "JS_Video_SetReadyHandler": _JS_Video_SetReadyHandler,
- "JS_Video_SetSeekedOnceHandler": _JS_Video_SetSeekedOnceHandler,
- "JS_Video_SetVolume": _JS_Video_SetVolume,
- "JS_Video_Time": _JS_Video_Time,
- "JS_Video_UpdateToTexture": _JS_Video_UpdateToTexture,
- "JS_Video_Width": _JS_Video_Width,
- "JS_WebCamVideo_CanPlay": _JS_WebCamVideo_CanPlay,
- "JS_WebCamVideo_GetDeviceName": _JS_WebCamVideo_GetDeviceName,
- "JS_WebCamVideo_GetNativeHeight": _JS_WebCamVideo_GetNativeHeight,
- "JS_WebCamVideo_GetNativeWidth": _JS_WebCamVideo_GetNativeWidth,
- "JS_WebCamVideo_GetNumDevices": _JS_WebCamVideo_GetNumDevices,
- "JS_WebCamVideo_GrabFrame": _JS_WebCamVideo_GrabFrame,
- "JS_WebCamVideo_IsFrontFacing": _JS_WebCamVideo_IsFrontFacing,
- "JS_WebCamVideo_Start": _JS_WebCamVideo_Start,
- "JS_WebCamVideo_Stop": _JS_WebCamVideo_Stop,
- "JS_WebCam_IsSupported": _JS_WebCam_IsSupported,
  "JS_WebRequest_Abort": _JS_WebRequest_Abort,
  "JS_WebRequest_Create": _JS_WebRequest_Create,
  "JS_WebRequest_GetResponseMetaData": _JS_WebRequest_GetResponseMetaData,
@@ -14270,7 +13850,6 @@ var asmLibraryArg = {
  "invoke_dddi": invoke_dddi,
  "invoke_dii": invoke_dii,
  "invoke_diii": invoke_diii,
- "invoke_diiii": invoke_diiii,
  "invoke_fffi": invoke_fffi,
  "invoke_ffi": invoke_ffi,
  "invoke_fi": invoke_fi,
@@ -14306,7 +13885,6 @@ var asmLibraryArg = {
  "invoke_ji": invoke_ji,
  "invoke_jii": invoke_jii,
  "invoke_jiii": invoke_jiii,
- "invoke_jiiii": invoke_jiiii,
  "invoke_jiiiii": invoke_jiiiii,
  "invoke_jiiiiiiiiii": invoke_jiiiiiiiiii,
  "invoke_jijiii": invoke_jijiii,
@@ -14474,6 +14052,10 @@ var dynCall_jii = Module["dynCall_jii"] = createExportWrapper("dynCall_jii");
 
 var dynCall_viiiiiii = Module["dynCall_viiiiiii"] = createExportWrapper("dynCall_viiiiiii");
 
+var dynCall_jiiiii = Module["dynCall_jiiiii"] = createExportWrapper("dynCall_jiiiii");
+
+var dynCall_jiiiiiiiiii = Module["dynCall_jiiiiiiiiii"] = createExportWrapper("dynCall_jiiiiiiiiii");
+
 var dynCall_fiiffi = Module["dynCall_fiiffi"] = createExportWrapper("dynCall_fiiffi");
 
 var dynCall_viiififii = Module["dynCall_viiififii"] = createExportWrapper("dynCall_viiififii");
@@ -14491,6 +14073,12 @@ var dynCall_iiiifii = Module["dynCall_iiiifii"] = createExportWrapper("dynCall_i
 var dynCall_iiifii = Module["dynCall_iiifii"] = createExportWrapper("dynCall_iiifii");
 
 var dynCall_viiiifii = Module["dynCall_viiiifii"] = createExportWrapper("dynCall_viiiifii");
+
+var dynCall_viiiiiiiiii = Module["dynCall_viiiiiiiiii"] = createExportWrapper("dynCall_viiiiiiiiii");
+
+var dynCall_iiiiiiiiiji = Module["dynCall_iiiiiiiiiji"] = createExportWrapper("dynCall_iiiiiiiiiji");
+
+var dynCall_vji = Module["dynCall_vji"] = createExportWrapper("dynCall_vji");
 
 var dynCall_viiiidi = Module["dynCall_viiiidi"] = createExportWrapper("dynCall_viiiidi");
 
@@ -14542,12 +14130,6 @@ var dynCall_viiif = Module["dynCall_viiif"] = createExportWrapper("dynCall_viiif
 
 var dynCall_viiifi = Module["dynCall_viiifi"] = createExportWrapper("dynCall_viiifi");
 
-var dynCall_viiiiiiiiii = Module["dynCall_viiiiiiiiii"] = createExportWrapper("dynCall_viiiiiiiiii");
-
-var dynCall_iiiiiiiiiji = Module["dynCall_iiiiiiiiiji"] = createExportWrapper("dynCall_iiiiiiiiiji");
-
-var dynCall_vji = Module["dynCall_vji"] = createExportWrapper("dynCall_vji");
-
 var dynCall_viiiiiiiiifi = Module["dynCall_viiiiiiiiifi"] = createExportWrapper("dynCall_viiiiiiiiifi");
 
 var dynCall_iiiiiiiiiiiii = Module["dynCall_iiiiiiiiiiiii"] = createExportWrapper("dynCall_iiiiiiiiiiiii");
@@ -14557,14 +14139,6 @@ var dynCall_fiiii = Module["dynCall_fiiii"] = createExportWrapper("dynCall_fiiii
 var dynCall_iiiifi = Module["dynCall_iiiifi"] = createExportWrapper("dynCall_iiiifi");
 
 var dynCall_viiiiij = Module["dynCall_viiiiij"] = createExportWrapper("dynCall_viiiiij");
-
-var dynCall_jiiii = Module["dynCall_jiiii"] = createExportWrapper("dynCall_jiiii");
-
-var dynCall_diiii = Module["dynCall_diiii"] = createExportWrapper("dynCall_diiii");
-
-var dynCall_jiiiii = Module["dynCall_jiiiii"] = createExportWrapper("dynCall_jiiiii");
-
-var dynCall_jiiiiiiiiii = Module["dynCall_jiiiiiiiiii"] = createExportWrapper("dynCall_jiiiiiiiiii");
 
 var dynCall_viiij = Module["dynCall_viiij"] = createExportWrapper("dynCall_viiij");
 
@@ -14692,6 +14266,8 @@ var dynCall_iijii = Module["dynCall_iijii"] = createExportWrapper("dynCall_iijii
 
 var dynCall_iijjjji = Module["dynCall_iijjjji"] = createExportWrapper("dynCall_iijjjji");
 
+var dynCall_diiii = Module["dynCall_diiii"] = createExportWrapper("dynCall_diiii");
+
 var dynCall_iiidi = Module["dynCall_iiidi"] = createExportWrapper("dynCall_iiidi");
 
 var dynCall_jdi = Module["dynCall_jdi"] = createExportWrapper("dynCall_jdi");
@@ -14721,6 +14297,8 @@ var dynCall_iiiiiji = Module["dynCall_iiiiiji"] = createExportWrapper("dynCall_i
 var dynCall_viiijii = Module["dynCall_viiijii"] = createExportWrapper("dynCall_viiijii");
 
 var dynCall_viiiji = Module["dynCall_viiiji"] = createExportWrapper("dynCall_viiiji");
+
+var dynCall_jiiii = Module["dynCall_jiiii"] = createExportWrapper("dynCall_jiiii");
 
 var dynCall_vjii = Module["dynCall_vjii"] = createExportWrapper("dynCall_vjii");
 
@@ -14887,8 +14465,6 @@ var dynCall_viifiiii = Module["dynCall_viifiiii"] = createExportWrapper("dynCall
 var dynCall_vifffii = Module["dynCall_vifffii"] = createExportWrapper("dynCall_vifffii");
 
 var dynCall_iifffi = Module["dynCall_iifffi"] = createExportWrapper("dynCall_iifffi");
-
-var dynCall_viijjii = Module["dynCall_viijjii"] = createExportWrapper("dynCall_viijjii");
 
 var dynCall_viiidii = Module["dynCall_viiidii"] = createExportWrapper("dynCall_viiidii");
 
@@ -15166,23 +14742,11 @@ var dynCall_iiijji = Module["dynCall_iiijji"] = createExportWrapper("dynCall_iii
 
 var dynCall_ijjiiiii = Module["dynCall_ijjiiiii"] = createExportWrapper("dynCall_ijjiiiii");
 
-var dynCall_viijjji = Module["dynCall_viijjji"] = createExportWrapper("dynCall_viijjji");
-
 var dynCall_vidd = Module["dynCall_vidd"] = createExportWrapper("dynCall_vidd");
 
 var dynCall_iiiiiifffiiifiii = Module["dynCall_iiiiiifffiiifiii"] = createExportWrapper("dynCall_iiiiiifffiiifiii");
 
 var dynCall_fiiiif = Module["dynCall_fiiiif"] = createExportWrapper("dynCall_fiiiif");
-
-var dynCall_viiifffiiij = Module["dynCall_viiifffiiij"] = createExportWrapper("dynCall_viiifffiiij");
-
-var dynCall_viiffiiii = Module["dynCall_viiffiiii"] = createExportWrapper("dynCall_viiffiiii");
-
-var dynCall_viffffffffffffiiii = Module["dynCall_viffffffffffffiiii"] = createExportWrapper("dynCall_viffffffffffffiiii");
-
-var dynCall_ff = Module["dynCall_ff"] = createExportWrapper("dynCall_ff");
-
-var dynCall_iiiiiff = Module["dynCall_iiiiiff"] = createExportWrapper("dynCall_iiiiiff");
 
 var dynCall_viid = Module["dynCall_viid"] = createExportWrapper("dynCall_viid");
 
@@ -15197,6 +14761,8 @@ var dynCall_vfff = Module["dynCall_vfff"] = createExportWrapper("dynCall_vfff");
 var dynCall_f = Module["dynCall_f"] = createExportWrapper("dynCall_f");
 
 var dynCall_vffffffi = Module["dynCall_vffffffi"] = createExportWrapper("dynCall_vffffffi");
+
+var dynCall_ff = Module["dynCall_ff"] = createExportWrapper("dynCall_ff");
 
 var dynCall_if = Module["dynCall_if"] = createExportWrapper("dynCall_if");
 
@@ -15403,28 +14969,6 @@ function invoke_viiiiiii(index, a1, a2, a3, a4, a5, a6, a7) {
  }
 }
 
-function invoke_viiiiii(index, a1, a2, a3, a4, a5, a6) {
- var sp = stackSave();
- try {
-  dynCall_viiiiii(index, a1, a2, a3, a4, a5, a6);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_viifi(index, a1, a2, a3, a4) {
- var sp = stackSave();
- try {
-  dynCall_viifi(index, a1, a2, a3, a4);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
 function invoke_viiff(index, a1, a2, a3, a4) {
  var sp = stackSave();
  try {
@@ -15458,17 +15002,6 @@ function invoke_iiifi(index, a1, a2, a3, a4) {
  }
 }
 
-function invoke_viiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
- var sp = stackSave();
- try {
-  dynCall_viiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
 function invoke_viiif(index, a1, a2, a3, a4) {
  var sp = stackSave();
  try {
@@ -15495,6 +15028,17 @@ function invoke_viiffi(index, a1, a2, a3, a4, a5) {
  var sp = stackSave();
  try {
   dynCall_viiffi(index, a1, a2, a3, a4, a5);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0 && e !== "longjmp") throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
+ var sp = stackSave();
+ try {
+  dynCall_viiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
  } catch (e) {
   stackRestore(sp);
   if (e !== e + 0 && e !== "longjmp") throw e;
@@ -15539,6 +15083,17 @@ function invoke_iiiiiiidii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9) {
  var sp = stackSave();
  try {
   return dynCall_iiiiiiidii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0 && e !== "longjmp") throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_viiiiii(index, a1, a2, a3, a4, a5, a6) {
+ var sp = stackSave();
+ try {
+  dynCall_viiiiii(index, a1, a2, a3, a4, a5, a6);
  } catch (e) {
   stackRestore(sp);
   if (e !== e + 0 && e !== "longjmp") throw e;
@@ -15645,6 +15200,17 @@ function invoke_viiiiifffiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
  }
 }
 
+function invoke_viifi(index, a1, a2, a3, a4) {
+ var sp = stackSave();
+ try {
+  dynCall_viifi(index, a1, a2, a3, a4);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0 && e !== "longjmp") throw e;
+  _setThrew(1, 0);
+ }
+}
+
 function invoke_fffi(index, a1, a2, a3) {
  var sp = stackSave();
  try {
@@ -15693,17 +15259,6 @@ function invoke_fiiii(index, a1, a2, a3, a4) {
  var sp = stackSave();
  try {
   return dynCall_fiiii(index, a1, a2, a3, a4);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_diiii(index, a1, a2, a3, a4) {
- var sp = stackSave();
- try {
-  return dynCall_diiii(index, a1, a2, a3, a4);
  } catch (e) {
   stackRestore(sp);
   if (e !== e + 0 && e !== "longjmp") throw e;
@@ -15909,17 +15464,6 @@ function invoke_vidd(index, a1, a2, a3) {
  }
 }
 
-function invoke_jiiii(index, a1, a2, a3, a4) {
- var sp = stackSave();
- try {
-  return dynCall_jiiii(index, a1, a2, a3, a4);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
 function invoke_ji(index, a1) {
  var sp = stackSave();
  try {
@@ -15986,6 +15530,50 @@ function invoke_iiijiii(index, a1, a2, a3, a4, a5, a6, a7) {
  }
 }
 
+function invoke_jiiiii(index, a1, a2, a3, a4, a5) {
+ var sp = stackSave();
+ try {
+  return dynCall_jiiiii(index, a1, a2, a3, a4, a5);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0 && e !== "longjmp") throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_jiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
+ var sp = stackSave();
+ try {
+  return dynCall_jiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0 && e !== "longjmp") throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_iiiiiiiiiji(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) {
+ var sp = stackSave();
+ try {
+  return dynCall_iiiiiiiiiji(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0 && e !== "longjmp") throw e;
+  _setThrew(1, 0);
+ }
+}
+
+function invoke_vji(index, a1, a2, a3) {
+ var sp = stackSave();
+ try {
+  dynCall_vji(index, a1, a2, a3);
+ } catch (e) {
+  stackRestore(sp);
+  if (e !== e + 0 && e !== "longjmp") throw e;
+  _setThrew(1, 0);
+ }
+}
+
 function invoke_viiji(index, a1, a2, a3, a4, a5) {
  var sp = stackSave();
  try {
@@ -16030,54 +15618,10 @@ function invoke_viijii(index, a1, a2, a3, a4, a5, a6) {
  }
 }
 
-function invoke_iiiiiiiiiji(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11) {
- var sp = stackSave();
- try {
-  return dynCall_iiiiiiiiiji(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_vji(index, a1, a2, a3) {
- var sp = stackSave();
- try {
-  dynCall_vji(index, a1, a2, a3);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
 function invoke_viiiiij(index, a1, a2, a3, a4, a5, a6, a7) {
  var sp = stackSave();
  try {
   dynCall_viiiiij(index, a1, a2, a3, a4, a5, a6, a7);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_jiiiii(index, a1, a2, a3, a4, a5) {
- var sp = stackSave();
- try {
-  return dynCall_jiiiii(index, a1, a2, a3, a4, a5);
- } catch (e) {
-  stackRestore(sp);
-  if (e !== e + 0 && e !== "longjmp") throw e;
-  _setThrew(1, 0);
- }
-}
-
-function invoke_jiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) {
- var sp = stackSave();
- try {
-  return dynCall_jiiiiiiiiii(index, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10);
  } catch (e) {
   stackRestore(sp);
   if (e !== e + 0 && e !== "longjmp") throw e;
